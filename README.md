@@ -22,8 +22,14 @@ Welcome to the Firefighting Robot repository! This project focuses on the develo
 - **/src:** Contains the source code for the firefighting robot's software.
 - **/hardware:** Documentation and design files related to the robot's hardware components.
 - **/docs:** Supplementary documents, user manuals, and technical specifications.
-  - **Module Design Photo:** Add a photo of the hardware module design.
-  - **Proteus Design Photo:** Add a photo showcasing the Proteus design.
+  
+## Module Design
+
+![Module Design](/Module%20Design.png)
+
+## Proteus Design
+
+![Proteus Design](/)
 
 ## Getting Started
 
@@ -32,4 +38,4 @@ Follow these steps to get started with the firefighting robot:
 1. Clone the repository to your local machine:
 
    ```bash
-   git clone https://github.com/omarhassan2/Firefighting-Robot.git
+   git clone https://github.com/omarhassan2/Fire-Fighting-Robot.git
