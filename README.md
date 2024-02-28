@@ -29,7 +29,7 @@ Welcome to the Firefighting Robot repository! This project focuses on the develo
 
 ## Proteus Design
 
-![Proteus Design](/)
+![Proteus Design](/Proteus%20Design.png)
 
 ## Getting Started
 
