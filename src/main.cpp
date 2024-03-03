@@ -15,17 +15,17 @@
 
 /*************** Macro Defentions Section ***************/
 /* Alaram System */
-#define ALARM_RED_LED             (2)
+#define ALARM_RED_LED             (5)
 #define ALARM_BUZZER              (3)
 
 /* Active Water Pump with control pipe direction */
 #define PUMP_RELAY_PIN            (4)
-#define SERVO_PIPE_PIN            (5)
+#define SERVO_PIPE_PIN            (2)
 
 /* Flame Sensors */
-#define FLAME_SENSOR_RIGHT        (7)
-#define FLAME_SENSOR_FORWARD      (8)
-#define FLAME_SENSOR_LEFT         (9)
+#define FLAME_SENSOR_RIGHT        (8)
+#define FLAME_SENSOR_FORWARD      (6)
+#define FLAME_SENSOR_LEFT         (7)
 
 /* Motors Driver */
 #define MOTOR_A_IN1               (10)
@@ -69,19 +69,20 @@ void ActivePump();
 
 /*************** Global Decleration Section ***************/
 Servo Pipe;
-// LiquidCrystal_I2C lcd(0x27, 16, 2);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 char controlSignal;
-bool autonomousModeFlag = true;
+bool autonomousModeFlag = false;
 bool activePumpFlag = true;
 /************************************************************************/
 
 
 /*************** Setup Application Section ***************/
 void setup(){
-  // lcd.begin(16, 2);         
-  // lcd.backlight(); 
+  lcd.init();
+  lcd.begin(16, 2);         
+  lcd.backlight(); 
 
-  pinMode(ALARM_RED_LED, OUTPUT);
+  // pinMode(ALARM_RED_LED, OUTPUT);
   pinMode(ALARM_BUZZER, OUTPUT);
 
   pinMode(MOTOR_A_IN1, OUTPUT);
@@ -105,20 +106,26 @@ void setup(){
 
 /*************** Start Application Section ***************/
 void loop(){
-  firefighting();
+  RemoteControlMode();
+
+  while (autonomousModeFlag)
+  {
+    AutonomousFirefightingMode();
+  }
+  
 }
+/************************************************************************/
 
 
-/*************** Function Defentions Section ***************/
+/*************** Function Defintions Section ***************/
 void PrintLCD(bool STATE, String DIRECTION) {
-  // lcd.clear();
-  // lcd.setCursor(0, 0);
-  // lcd.print("Pump State: ");
-  // lcd.print(STATE ? "ON" : "OFF");
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Pump State: ");
+  lcd.print(STATE ? "ON" : "OFF");
 
-  // lcd.setCursor(0, 1);
-  // lcd.print("Fire: ");
-  // lcd.print(DIRECTION);
+  lcd.setCursor(0, 1);
+  lcd.print("Fire: " + DIRECTION);
  }
 
 
@@ -163,15 +170,38 @@ void stop(){
 
 
 uint8_t detectFireDirection(){
+  int left = digitalRead(FLAME_SENSOR_LEFT);
+  delay(10);
+  int right = digitalRead(FLAME_SENSOR_RIGHT);
+  delay(10);
+  int forward = digitalRead(FLAME_SENSOR_FORWARD);
+  delay(10);
   
+  if (right == LOW)
+  {
+    return RIGHT_FLAME;
+  }
+  else if(left == LOW){
+    return LEFT_FLAME;
+  }
+  else if(forward == LOW){
+    return FORWARD_FLAME;
+  }
+  else{
+    return NO_FLAME;
+  }
 }
 
 
 void movePipe(){
-  for(int i = 0; i < 3; i++){
-    Pipe.write(90);
-    delay(200);
-    Pipe.write(0);
+  int pos = 0;
+  for (pos = 50; pos <= 130; pos += 1) {
+    Pipe.write(pos);
+    delay(10); 
+  }
+  for (pos = 130; pos >= 50; pos -= 1) {
+    Pipe.write(pos);
+    delay(10);
   }
 }
 
@@ -184,32 +214,37 @@ void firefighting(){
 
 
 void RemoteControlMode(){
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Welcome Robot");
+
   while (Serial.available()) {
     controlSignal = Serial.read();
     Serial.println(controlSignal);
     delay(5);
+
     if (controlSignal == 'F') {
-      // PrintLCD(false, "Forward");
+      PrintLCD(false, "Forward");
       moveForward();
       delay(10);
     }
     if (controlSignal == 'R') {
-      // PrintLCD(false, "RIGHT");
+      PrintLCD(false, "RIGHT");
       turnRight();
       delay(10);
     }
     if (controlSignal == 'L') {
-      // PrintLCD(false, "LEFT");
+      PrintLCD(false, "LEFT");
       turnLeft();
       delay(10);
     }
     if (controlSignal == 'B') {
-      // PrintLCD(false, "BACK");
+      PrintLCD(false, "BACK");
       moveBack();
       delay(5);
     }
     if (controlSignal == 'S') {
-      // PrintLCD(false, "STOP");
+      PrintLCD(false, "STOP");
       stop();
       delay(10);
     }
@@ -230,20 +265,27 @@ void AutonomousFirefightingMode(){
   uint8_t fireDirection = detectFireDirection();
   switch (fireDirection) {
     case FORWARD_FLAME:
-      firefighting();
-      PrintLCD(true, "Forward");
+      while(!digitalRead(FLAME_SENSOR_FORWARD)){
+        firefighting();
+        PrintLCD(true, "Forward");
+        delay(500); 
+      }
       break;
     case RIGHT_FLAME:
       turnRight();
-      delay(500);
-      firefighting();
-      PrintLCD(true, "Right");
+      while(!digitalRead(FLAME_SENSOR_RIGHT)){
+        firefighting();
+        PrintLCD(true, "Right");
+        delay(500);
+      }
       break;
     case LEFT_FLAME:
       turnLeft();
-      delay(500);
-      firefighting();
-      PrintLCD(true, "Left");
+      while(!digitalRead(FLAME_SENSOR_LEFT)){
+        firefighting();
+        PrintLCD(true, "Left");
+        delay(500);
+      }
       break;
     case NO_FLAME:
       stop();
@@ -257,3 +299,4 @@ void ActivePump(){
   delay(2000);
   digitalWrite(PUMP_RELAY_PIN, LOW);
 }
+/************************************************************************/
